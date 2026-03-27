@@ -34,8 +34,7 @@
 - `LICENSE`
 - `THIRD_PARTY_NOTICES.md`
 - `CONTRIBUTING.md`
-- 纯代码生成的测试
-- 你本人原创、可再分发的最小 synthetic / public fixtures
+- 若确需保留公开测试，仅保留纯代码生成或你本人原创、可再分发的最小 synthetic / public fixtures
 
 ### 可保留但需确认来源
 - `src/ui/icons/app_icon.ico`
@@ -153,21 +152,21 @@
 ---
 
 ## 五、建议的公开仓库结构
+## 五、建议的公开仓库结构
 
 ```text
 app/
 src/
-tests/
-  fixtures_public/
-  test_*.py
+scripts/
 docs/
 README.md
 LICENSE
 THIRD_PARTY_NOTICES.md
 CONTRIBUTING.md
 requirements.txt
-```
 
+# 可选：仅在确有必要且素材可公开再分发时，再加入 tests/
+```
 ---
 
 ## 六、默认原则

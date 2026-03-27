@@ -96,7 +96,6 @@
 - `docs/PROJECT_STRUCTURE.md`
 - `docs/RELEASE_NOTES_0.20_LTS.md`
 - `docs/OPEN_SOURCE_MIT_RELEASE_CHECKLIST.md`
-- `docs/NOT_FOR_UPLOAD.md`
 - `THIRD_PARTY_NOTICES.md`
 - `CONTRIBUTING.md`
 - `使用说明.md`

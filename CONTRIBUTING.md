@@ -21,8 +21,9 @@
 - 从第三方文档中抽取出的 prompt 中间产物，例如 `prompt_filled.txt`、`spec_extracted.txt`、`summary.json` 等。
 
 ## 4. 测试素材要求
-- 公开测试素材统一优先放在 `tests/fixtures_public/`。
-- 测试素材必须满足：
+- 当前公共仓库默认不提交真实样本文档或回归产物。
+- 如未来需要补充公开测试素材，请仅提交你本人原创、已脱敏且可再分发的 synthetic / public fixtures。
+- 公开测试素材必须满足：
   - 可公开再分发；
   - 不含第三方规范正文；
   - 不含真实个人 / 机构信息；
@@ -36,7 +37,7 @@
 - 检查新增文件是否需要同步更新：
   - `THIRD_PARTY_NOTICES.md`
   - `docs/OPEN_SOURCE_MIT_RELEASE_CHECKLIST.md`
-  - `docs/NOT_FOR_UPLOAD.md`
+  - `docs/PROJECT_STRUCTURE.md`
 
 ## 6. 关于第三方依赖
 - 本项目源码采用 `MIT`，但第三方依赖不会因此变成 `MIT`。
