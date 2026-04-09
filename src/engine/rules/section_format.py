@@ -2705,6 +2705,13 @@ def _normalize_explicit_run_font_hints(doc: Document) -> int:
     return _normalize_explicit_run_font_hints_in_root(doc.element.body)
 
 
+def _safe_rel_target_part(rel):
+    try:
+        return rel.target_part
+    except Exception:
+        return None
+
+
 def _normalize_related_story_part_font_hints(doc: Document) -> dict[str, int]:
     changed_parts: dict[str, int] = {}
     seen_partnames: set[str] = set()
@@ -2719,7 +2726,7 @@ def _normalize_related_story_part_font_hints(doc: Document) -> dict[str, int]:
     )
 
     for rel in doc.part.rels.values():
-        part = getattr(rel, "target_part", None)
+        part = _safe_rel_target_part(rel)
         partname = str(getattr(part, "partname", "") or "")
         if not partname or partname in seen_partnames:
             continue

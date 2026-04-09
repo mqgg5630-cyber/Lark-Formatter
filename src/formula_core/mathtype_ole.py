@@ -88,6 +88,7 @@ _BIG_OP = {
     _TM_UNION: r"\bigcup",
     _TM_INTER: r"\bigcap",
 }
+_MATRIX_ROW_SEPARATOR = r" \\ "
 _UNICODE_LATEX = dict(UNICODE_MATH_TO_LATEX)
 _UNICODE_LATEX_COMMANDS_RE = re.compile(
     "("
@@ -413,7 +414,8 @@ class _Parser:
                 lines.append(tok.text)
         if len(lines) <= 1:
             return ParsedToken(kind="text", text=lines[0] if lines else "")
-        return ParsedToken(kind="text", text=rf"\begin{{matrix}}{' \\\\ '.join(lines)}\end{{matrix}}")
+        matrix_rows = _MATRIX_ROW_SEPARATOR.join(lines)
+        return ParsedToken(kind="text", text=rf"\begin{{matrix}}{matrix_rows}\end{{matrix}}")
 
     def _matrix(self) -> ParsedToken:
         options = self.r.read_byte()
@@ -440,7 +442,8 @@ class _Parser:
             idx += cols
             row.extend([""] * max(0, cols - len(row)))
             rows_out.append(" & ".join(row))
-        return ParsedToken(kind="text", text=rf"\begin{{matrix}}{' \\\\ '.join(rows_out)}\end{{matrix}}")
+        matrix_rows = _MATRIX_ROW_SEPARATOR.join(rows_out)
+        return ParsedToken(kind="text", text=rf"\begin{{matrix}}{matrix_rows}\end{{matrix}}")
 
     def _slot(self) -> str:
         while not self.r.eof():

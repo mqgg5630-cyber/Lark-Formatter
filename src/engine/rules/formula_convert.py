@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from copy import deepcopy
-
 from docx import Document
 
 from src.engine.change_tracker import ChangeTracker
@@ -15,8 +13,8 @@ from src.formula_core.normalize import normalize_formula_node
 from src.formula_core.parse import parse_document_formulas, _looks_like_non_math_latex_text
 from src.formula_core.runtime import FormulaRuleStats
 from src.scene.schema import SceneConfig
+from src.utils.ooxml_paragraph import replace_paragraph_payload_with_omml
 
-_W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 _CONFIDENCE_THRESHOLD = 0.60
 _FORMULA_DIAGNOSTIC_MESSAGES = {
     "mathtype_binary_unparsed": "MathType 二进制未解析",
@@ -33,22 +31,7 @@ def _replace_paragraph_with_omml(paragraph, omml_element) -> bool:
     p = paragraph._p
     if p is None:
         return False
-    ppr_tag = f"{{{_W_NS}}}pPr"
-    run_tag = f"{{{_W_NS}}}r"
-    for child in list(p):
-        if child.tag != ppr_tag:
-            p.remove(child)
-
-    omml_copy = deepcopy(omml_element)
-    local = omml_copy.tag.split("}")[-1] if "}" in omml_copy.tag else omml_copy.tag
-    if local == "oMathPara":
-        p.append(omml_copy)
-        return True
-
-    run = p.makeelement(run_tag)
-    run.append(omml_copy)
-    p.append(run)
-    return True
+    return replace_paragraph_payload_with_omml(p, omml_element).applied
 
 
 def _paragraph_table_element(paragraph):

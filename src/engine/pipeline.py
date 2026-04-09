@@ -45,6 +45,7 @@ from src.docx_io.sanitize import sanitize_docx, docx_needs_sanitization
 from src.docx_io.compare import generate_compare_doc
 from src.docx_io.field_refresh import refresh_doc_fields_with_word
 from src.docx_io.mathtype_office_fallback import apply_mathtype_office_fallback
+from src.docx_io.semantic_diagnostics import analyze_docx, summarize_semantic_issues
 from src.utils.runtime_features import mathtype_office_fallback_forced_disabled
 
 
@@ -572,6 +573,8 @@ class Pipeline:
                 success=True,
                 failure_reason=None,
             )
+        if final_path:
+            self._record_docx_semantics(final_path, target="final_doc_semantics")
 
         if self._is_cancel_requested():
             return PipelineResult(
@@ -609,6 +612,7 @@ class Pipeline:
                     include_text=bool(self.config.output.compare_text),
                     include_formatting=bool(self.config.output.compare_formatting),
                 )
+                self._record_docx_semantics(compare_path, target="compare_doc_semantics")
             except Exception as e:
                 self.tracker.record(
                     rule_name="pipeline",
@@ -881,6 +885,8 @@ class Pipeline:
                     success=True,
                     failure_reason=None,
                 )
+            if final_path:
+                self._record_docx_semantics(final_path, target="final_doc_semantics")
 
             if self._is_cancel_requested():
                 return PipelineResult(
@@ -916,6 +922,7 @@ class Pipeline:
                         include_text=bool(self.config.output.compare_text),
                         include_formatting=bool(self.config.output.compare_formatting),
                     )
+                    self._record_docx_semantics(compare_path, target="compare_doc_semantics")
                 except Exception as exc:
                     self.tracker.record(
                         rule_name="pipeline",
@@ -969,6 +976,53 @@ class Pipeline:
             return True, f"normalized_styles={normalized_styles}"
         except Exception as exc:
             return False, f"toc normalization failed: {exc}"
+
+    def _record_docx_semantics(self, doc_path: str | None, *, target: str) -> None:
+        """Run read-only semantic diagnostics on a saved DOCX and log the result."""
+        if not doc_path:
+            return
+        try:
+            report = analyze_docx(doc_path)
+            issues = summarize_semantic_issues(report)
+        except Exception as exc:
+            self.tracker.record(
+                rule_name="pipeline",
+                target=target,
+                section="global",
+                change_type="validate",
+                before="semantic diagnostics pending",
+                after="semantic diagnostics failed",
+                paragraph_index=-1,
+                success=False,
+                failure_reason=str(exc),
+            )
+            return
+
+        if issues:
+            self.tracker.record(
+                rule_name="pipeline",
+                target=target,
+                section="global",
+                change_type="validate",
+                before="semantic diagnostics pending",
+                after="semantic diagnostics found issues",
+                paragraph_index=-1,
+                success=False,
+                failure_reason="; ".join(issues[:6]),
+            )
+            return
+
+        self.tracker.record(
+            rule_name="pipeline",
+            target=target,
+            section="global",
+            change_type="validate",
+            before="semantic diagnostics pending",
+            after="semantic diagnostics clean",
+            paragraph_index=-1,
+            success=True,
+            failure_reason=None,
+        )
 
     def _generate_reports(self, output_paths: dict, *, input_file: str = "") -> None:
         """生成 JSON / Markdown 报告文件（如果路径存在于 output_paths）。"""

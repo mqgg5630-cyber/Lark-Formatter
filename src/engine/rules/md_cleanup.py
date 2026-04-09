@@ -39,6 +39,7 @@ from src.markdown.word_render import (
     get_ordered_level_format, get_unordered_level_definition,
     _apply_inline_format, normalize_markdown_table, normalize_markdown_table_visual_only,
 )
+from src.utils.ooxml_paragraph import replace_paragraph_payload_with_omml
 
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 _RE_ESC_PLACEHOLDER_ARTIFACT = re.compile(r"(?:__)?ESC_?[0-9A-Fa-f]{8}(?:__)?")
@@ -63,22 +64,7 @@ def _replace_paragraph_with_omml(paragraph, omml_element) -> bool:
     p = paragraph._p
     if p is None:
         return False
-    ppr_tag = f"{{{W_NS}}}pPr"
-    run_tag = f"{{{W_NS}}}r"
-    for child in list(p):
-        if child.tag != ppr_tag:
-            p.remove(child)
-
-    omml_copy = deepcopy(omml_element)
-    local = omml_copy.tag.split("}")[-1] if "}" in omml_copy.tag else omml_copy.tag
-    if local == "oMathPara":
-        p.append(omml_copy)
-        return True
-
-    run = p.makeelement(run_tag)
-    run.append(omml_copy)
-    p.append(run)
-    return True
+    return replace_paragraph_payload_with_omml(p, omml_element).applied
 
 
 class MdCleanupRule(BaseRule):

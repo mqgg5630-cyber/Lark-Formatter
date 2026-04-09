@@ -98,6 +98,18 @@ def _para_has_image(para) -> bool:
     return False
 
 
+def _paragraph_visible_text(para) -> str:
+    """Return visible paragraph text without crashing on comment-reference-only runs."""
+    try:
+        return para.text or ""
+    except TypeError:
+        texts = []
+        for t_el in para._element.findall(f".//{_w('t')}"):
+            if t_el.text:
+                texts.append(t_el.text)
+        return "".join(texts)
+
+
 def _build_chapter_ranges(headings, body_end: int):
     """从标题列表构建章号范围表 [(start, end, chapter_num), ...]"""
     chapters = []
@@ -197,7 +209,7 @@ def _collect_figure_caption_continuations(doc, body_items, caption_pos: int) -> 
         typ, para_idx, _ = body_items[k]
         if typ != "para":
             break
-        text = (doc.paragraphs[para_idx].text or "").strip()
+        text = _paragraph_visible_text(doc.paragraphs[para_idx]).strip()
         if not text:
             break
         if not _is_figure_caption_continuation(text):
@@ -458,7 +470,7 @@ def _rebuild_para_as_caption_field(para, prefix, chapter_num, seq_num, sep, titl
                            numbering_format=numbering_format)
         return
 
-    _strip_caption_number_prefix(el, para.text or "")
+    _strip_caption_number_prefix(el, _paragraph_visible_text(para))
 
     insert_pos = list(el).index(first_text_run)
     new_runs = []
@@ -483,7 +495,7 @@ def _rebuild_para_as_caption_text(para, prefix, chapter_num, seq_num, sep, title
                                 numbering_format=numbering_format)
         return
 
-    _strip_caption_number_prefix(el, para.text or "")
+    _strip_caption_number_prefix(el, _paragraph_visible_text(para))
 
     insert_pos = list(el).index(first_text_run)
     lead_text = f"{prefix}{_compose_caption_number_text(chapter_num, seq_num, numbering_format)}{sep}"
@@ -719,7 +731,7 @@ class CaptionFormatRule(BaseRule):
             if fig.caption_para_index is not None:
                 # 已有题注 → 提取标题文本，用域代码重建
                 para = doc.paragraphs[fig.caption_para_index]
-                old_text = para.text.strip()
+                old_text = _paragraph_visible_text(para).strip()
                 regex = _RE_FIG_CAPTION
                 m = regex.match(old_text)
                 title = m.group("title").strip() if m else old_text
@@ -804,7 +816,7 @@ class CaptionFormatRule(BaseRule):
             if tbl.caption_para_index is not None:
                 # 已有题注 → 提取标题文本，用域代码重建
                 para = doc.paragraphs[tbl.caption_para_index]
-                old_text = para.text.strip()
+                old_text = _paragraph_visible_text(para).strip()
                 regex = _RE_TBL_CAPTION
                 m = regex.match(old_text)
                 title = m.group("title").strip() if m else old_text

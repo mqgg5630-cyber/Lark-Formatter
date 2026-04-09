@@ -8,13 +8,13 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from copy import deepcopy
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from lxml import etree
 
 from src.formula_core.convert import convert_mathml_to_omml
+from src.utils.ooxml_paragraph import replace_paragraph_payload_with_omml
 
 _W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 _O_NS = "urn:schemas-microsoft-com:office:office"
@@ -198,21 +198,7 @@ def count_mathtype_ole_objects(doc_path: str) -> int:
 
 
 def _replace_paragraph_with_omml(paragraph_el, omml_element) -> bool:
-    ppr = paragraph_el.find(_w("pPr"))
-    for child in list(paragraph_el):
-        if child is not ppr:
-            paragraph_el.remove(child)
-
-    omml_copy = deepcopy(omml_element)
-    local = omml_copy.tag.split("}")[-1] if "}" in omml_copy.tag else omml_copy.tag
-    if local == "oMathPara":
-        paragraph_el.append(omml_copy)
-        return True
-
-    run = etree.Element(_w("r"))
-    run.append(omml_copy)
-    paragraph_el.append(run)
-    return True
+    return replace_paragraph_payload_with_omml(paragraph_el, omml_element).applied
 
 
 def apply_mathml_fallback_payloads_to_docx(doc_path: str, mathml_payloads: list[dict]) -> dict[str, int]:
