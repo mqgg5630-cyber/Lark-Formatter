@@ -26,11 +26,12 @@
 
 ## 环境要求
 - Windows（脚本为 `.bat`，封包目标为 Windows）
-- Python 3.10+
+- conda（Anaconda / Miniconda / Miniforge 均可）
+- 运行环境为 conda 环境 `lark-f`（Python 3.12，由安装脚本自动创建）
 
 ## 快速开始
 ```powershell
-# 1) 首次安装依赖
+# 1) 首次安装依赖（conda 方式，自动创建环境 lark-f，使用官方源）
 .\install_env.bat
 
 # 2) 启动 GUI
@@ -39,6 +40,20 @@
 # 3) 调试模式启动（有控制台输出）
 .\start_app_debug.bat
 ```
+
+## conda 安装说明
+`install_env.bat` 采用 conda 方式部署（不再使用 `.venv`）：
+
+- 环境名默认为 `lark-f`，可用环境变量 `LARK_FORMATTER_ENV_NAME` 覆盖。
+- conda 建环境使用官方 `defaults` 频道（`--override-channels -c defaults`），pip 依赖安装使用官方 PyPI（`https://pypi.org/simple`），全程不经过镜像源。
+- 环境创建在 conda 自己的 envs 目录（无论你把 envs 配在哪里，脚本都会通过 `conda env list` 自动定位）。
+- 后续 `start_app.bat` / `start_app_debug.bat` / `package_release.bat` 会自动查找该环境；脚本启动时无需手动 `conda activate`。
+- 如需改用其他频道/索引，可设置 `LARK_FORMATTER_CONDA_CHANNEL_ARGS` / `LARK_FORMATTER_PIP_INDEX_URL`。
+- 也可以手动安装：
+  ```powershell
+  conda env create -f environment.yml
+  ```
+- 若 conda 提示需要接受服务条款（ToS），按其提示执行一次 `conda tos accept` 命令后重试即可。
 
 ## 打包发布
 ```powershell
@@ -68,8 +83,8 @@
 
 ## 开发与验证
 ```powershell
-# 语法检查示例
-.\.venv\Scripts\python.exe -m py_compile src\scene\manager.py
+# 语法检查示例（使用 lark-f conda 环境）
+conda run -n lark-f python -m py_compile src\scene\manager.py
 ```
 
 ## 项目结构

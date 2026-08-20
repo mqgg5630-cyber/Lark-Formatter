@@ -1,16 +1,18 @@
 @echo off
-setlocal
+setlocal EnableExtensions
 set "REPO_ROOT=%~dp0..\.."
 for %%I in ("%REPO_ROOT%") do set "REPO_ROOT=%%~fI"
 cd /d "%REPO_ROOT%"
 
-if not exist ".venv\Scripts\python.exe" (
-    echo [ERROR] Missing virtual environment: .venv
+call "%~dp0conda_env.bat"
+if not "%LARK_CONDA_STATUS%"=="READY" (
+    echo [ERROR] Conda environment "%LARK_CONDA_ENV%" was not found.
     echo Run "install_env.bat" first.
     pause
     exit /b 1
 )
 
 echo [INFO] Starting app in debug mode (console output enabled)...
-".venv\Scripts\python.exe" main.py
+echo [INFO] Python: %LARK_CONDA_PY%
+"%LARK_CONDA_PY%" main.py
 exit /b %errorlevel%

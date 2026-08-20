@@ -1,0 +1,22 @@
+# Conda environment for Lark-Formatter.
+#
+# Automatic way (recommended, does the same steps):
+#     .\install_env.bat
+#
+# Manual way:
+#     conda env create -f environment.yml
+#     conda activate lark-f
+#
+# Notes:
+# - Uses official sources only: conda channel "defaults" (repo.anaconda.com)
+#   plus the official PyPI index for the pip dependencies.
+# - The "lark-f" environment name matches what install_env.bat / start_app.bat
+#   expect. Override with LARK_FORMATTER_ENV_NAME if you rename it.
+name: lark-f
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - -r requirements.txt

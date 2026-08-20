@@ -27,6 +27,7 @@ ROOT_DIR_RULES = [
     Rule("local_build_dirs", "build", "Build output directory."),
     Rule("local_build_dirs", "dist", "Distribution output directory."),
     Rule("local_env_dirs", ".venv", "Local virtual environment."),
+    Rule("local_env_dirs", ".conda_env_path.txt", "Local conda environment path cache."),
     Rule("local_env_dirs", ".pytest_cache", "pytest cache."),
 ]
 
