@@ -6,6 +6,9 @@ __pycache__/
 .venv/
 venv/
 
+# Conda env path cache written by scripts/windows/install_env.bat
+.conda_env_path.txt
+
 # Test/cache temp
 .pytest_cache/
 crash.log

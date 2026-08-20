@@ -4,93 +4,79 @@ set "REPO_ROOT=%~dp0..\.."
 for %%I in ("%REPO_ROOT%") do set "REPO_ROOT=%%~fI"
 cd /d "%REPO_ROOT%"
 
-set "BASE_PY_CMD="
-set "BASE_PY_LABEL="
+set "ENV_NAME=lark-f"
+if defined LARK_FORMATTER_ENV_NAME set "ENV_NAME=%LARK_FORMATTER_ENV_NAME%"
 
-for %%V in (3.14 3.13 3.12 3.11 3.10) do (
-    py -%%V --version >nul 2>&1
-    if !errorlevel! == 0 (
-        set "BASE_PY_CMD=py -%%V"
-        set "BASE_PY_LABEL=Python Launcher (%%V)"
-        goto :found_base
-    )
-)
+rem Official channels by default: conda uses Anaconda's official "defaults"
+rem channel, pip uses the official PyPI index. No mirrors are involved.
+set "CHANNEL_ARGS=--override-channels -c defaults"
+if defined LARK_FORMATTER_CONDA_CHANNEL_ARGS set "CHANNEL_ARGS=%LARK_FORMATTER_CONDA_CHANNEL_ARGS%"
+set "PIP_INDEX_ARGS=-i https://pypi.org/simple"
+if defined LARK_FORMATTER_PIP_INDEX_URL set "PIP_INDEX_ARGS=-i %LARK_FORMATTER_PIP_INDEX_URL%"
 
-python -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
-if %errorlevel%==0 (
-    set "BASE_PY_CMD=python"
-    set "BASE_PY_LABEL=python"
-    goto :found_base
-)
-
-for %%P in (
-    "%ProgramFiles%\QGIS 3.42.1\apps\Python312\python.exe"
-    "%ProgramFiles%\QGIS 3.42.1\bin\python.exe"
-    "%ProgramFiles%\Blender Foundation\Blender 5.0\5.0\python\bin\python.exe"
-    "%ProgramFiles%\Blender Foundation\Blender 4.4\4.4\python\bin\python.exe"
-    "%ProgramFiles%\Blender Foundation\Blender 3.6\3.6\python\bin\python.exe"
-) do (
-    if exist %%~P (
-        "%%~P" -c "import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>&1
-        if !errorlevel! == 0 (
-            set "BASE_PY_CMD=""%%~P"""
-            set "BASE_PY_LABEL=Fallback embedded Python: %%~P"
-            goto :found_base
-        )
-    )
-)
-
-:found_base
-if not defined BASE_PY_CMD (
-    echo [ERROR] No usable Python interpreter found.
-    echo Install Python 3.10+ and run this script again.
+echo [1/5] Locating conda...
+call "%~dp0conda_env.bat"
+if "%LARK_CONDA_STATUS%"=="NO_CONDA" (
+    echo [ERROR] conda was not found on PATH or in common install locations.
+    echo         Open "Anaconda Prompt ^(base^)" and run this script again, or set
+    echo         LARK_FORMATTER_CONDA_EXE to the full path of conda.exe.
     pause
     exit /b 1
 )
+echo [INFO] conda: %LARK_CONDA_EXE%
+echo [INFO] conda base: %LARK_CONDA_ROOT%
 
-echo [1/4] Base interpreter: %BASE_PY_LABEL%
-if exist ".venv\Scripts\python.exe" (
-    ".venv\Scripts\python.exe" -m pip --version >nul 2>&1
+if "%LARK_CONDA_STATUS%"=="READY" (
+    echo [2/5] Conda environment "%ENV_NAME%" already exists: %LARK_CONDA_PREFIX%
+) else (
+    echo [2/5] Creating conda environment "%ENV_NAME%" ^(python 3.12, channel: defaults^)...
+    call "%LARK_CONDA_EXE%" create -y %CHANNEL_ARGS% -n "%ENV_NAME%" python=3.12 pip
     if errorlevel 1 (
-        echo [WARN] Existing .venv is missing pip, recreating virtual environment...
-        rmdir /s /q ".venv"
+        echo [ERROR] Failed to create conda environment "%ENV_NAME%".
+        echo         If conda reported a prefix that already exists, remove the broken
+        echo         environment first with: conda env remove -n "%ENV_NAME%"
+        echo         If conda printed a Terms-of-Service prompt above, run the suggested
+        echo         "conda tos accept" command once, then retry.
+        echo         To install from different channels, set LARK_FORMATTER_CONDA_CHANNEL_ARGS.
+        pause
+        exit /b 1
     )
-)
-if not exist ".venv\Scripts\python.exe" (
-    %BASE_PY_CMD% -m venv ".venv"
-    if errorlevel 1 (
-        echo [ERROR] Failed to create .venv
+    call "%~dp0conda_env.bat"
+    if not "%LARK_CONDA_STATUS%"=="READY" (
+        echo [ERROR] The environment was created but its location could not be resolved.
+        echo         Ask conda directly with: conda env list
         pause
         exit /b 1
     )
 )
 
-echo [2/4] Ensure pip is available
-".venv\Scripts\python.exe" -m pip --version >nul 2>&1
-if errorlevel 1 (
-    ".venv\Scripts\python.exe" -m ensurepip --upgrade
-    if errorlevel 1 (
-        echo [ERROR] Failed to bootstrap pip in .venv
-        pause
-        exit /b 1
-    )
-)
+echo [3/5] Environment path: %LARK_CONDA_PREFIX%
+> "%REPO_ROOT%\.conda_env_path.txt" echo %LARK_CONDA_PREFIX%
 
-echo [3/4] Upgrade pip
-".venv\Scripts\python.exe" -m pip install --upgrade pip
+echo [4/5] Installing dependencies from official PyPI ^(https://pypi.org/simple^)...
+"%LARK_CONDA_PY%" -m pip install -r requirements.txt %PIP_INDEX_ARGS%
 if errorlevel 1 (
-    echo [ERROR] Failed to upgrade pip
+    echo [ERROR] Failed to install dependencies.
     pause
     exit /b 1
 )
 
-echo [4/4] Install dependencies
-".venv\Scripts\python.exe" -m pip install -r requirements.txt
+echo [5/5] Verifying installation...
+"%LARK_CONDA_PY%" -c "import sys; print('[INFO] ' + sys.version)" >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Failed to install dependencies
+    echo [ERROR] The environment interpreter is not working.
+    pause
+    exit /b 1
+)
+"%LARK_CONDA_PY%" -c "import PySide6, docx, lxml, latex2mathml, olefile, win32api" >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] Dependency verification failed. Detailed import errors:
+    "%LARK_CONDA_PY%" -c "import PySide6, docx, lxml, latex2mathml, olefile, win32api"
     pause
     exit /b 1
 )
 
-echo [OK] Environment is ready. Run "start_app.bat" to start the app.
+if exist ".venv" echo [NOTE] A legacy ".venv" folder exists in the repo root; it is no longer used and can be deleted.
+
+echo [OK] Conda environment "%ENV_NAME%" is ready. Run "start_app.bat" to start the app.
 exit /b 0

@@ -4,12 +4,14 @@ set "REPO_ROOT=%~dp0..\.."
 for %%I in ("%REPO_ROOT%") do set "REPO_ROOT=%%~fI"
 cd /d "%REPO_ROOT%"
 
-if not exist ".venv\Scripts\python.exe" (
-    echo [ERROR] Missing virtual environment: .venv
+call "%~dp0conda_env.bat"
+if not "%LARK_CONDA_STATUS%"=="READY" (
+    echo [ERROR] Conda environment "%LARK_CONDA_ENV%" was not found.
     echo Run "install_env.bat" first.
     pause
     exit /b 1
 )
+set "ENV_PY=%LARK_CONDA_PY%"
 
 set "SPEC_FILE=Lark-Formatter_v0.20_LTS.spec"
 if not exist "%SPEC_FILE%" (
@@ -27,10 +29,10 @@ if not errorlevel 1 (
 )
 
 echo [1/3] Ensure PyInstaller is installed
-".venv\Scripts\python.exe" -c "import PyInstaller" >nul 2>&1
+"%ENV_PY%" -c "import PyInstaller" >nul 2>&1
 if errorlevel 1 (
     echo PyInstaller not found, installing...
-    ".venv\Scripts\python.exe" -m pip install pyinstaller
+    "%ENV_PY%" -m pip install -i https://pypi.org/simple pyinstaller
     if errorlevel 1 (
         echo [ERROR] Failed to install PyInstaller
         pause
@@ -41,7 +43,7 @@ if errorlevel 1 (
 )
 
 echo [2/3] Build release package from %SPEC_FILE%
-".venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean "%SPEC_FILE%"
+"%ENV_PY%" -m PyInstaller --noconfirm --clean "%SPEC_FILE%"
 if errorlevel 1 (
     echo [ERROR] Packaging failed
     pause

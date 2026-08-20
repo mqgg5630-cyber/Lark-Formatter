@@ -106,7 +106,9 @@
 
 ### E. 本地环境与构建目录
 不要上传：
-- `.venv/`
+- `lark-f` 等 conda 环境（位于 conda 的 envs 目录，不在仓库内）
+- `.conda_env_path.txt`（conda 环境路径缓存，已加入 `.gitignore`）
+- `.venv/`（旧版安装方式遗留，现已不再使用）
 - `build/`
 - `dist/`
 - `.pytest_cache/`

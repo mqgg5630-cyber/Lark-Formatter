@@ -4,17 +4,12 @@ set "REPO_ROOT=%~dp0..\.."
 for %%I in ("%REPO_ROOT%") do set "REPO_ROOT=%%~fI"
 cd /d "%REPO_ROOT%"
 
-if exist ".venv\Scripts\python.exe" (
-    set "PYTHON=.venv\Scripts\python.exe"
-) else (
-    set "PYTHON=python"
-)
-
-%PYTHON% -c "import sys" >nul 2>&1
-if errorlevel 1 (
-    echo [ERROR] Python not found. Please install Python or create .venv first.
+call "%~dp0conda_env.bat"
+if not "%LARK_CONDA_STATUS%"=="READY" (
+    echo [ERROR] Conda environment "%LARK_CONDA_ENV%" was not found.
+    echo Run "install_env.bat" first.
     exit /b 1
 )
 
-%PYTHON% scripts\check_public_release.py %*
+"%LARK_CONDA_PY%" scripts\check_public_release.py %*
 exit /b %errorlevel%
